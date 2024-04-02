@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mouse Hello kitty cursor</title>
+</head>
+<body>
+    <div id="position">0:0</div>
+    <style>
+       * {
+        overflow: hidden;
+       }
+
+       #position {
+            position: absolute;
+            left: 0px;
+            top: 0px;
+       }
+    </style>
+    <script>
+        const canvasCursorInit = assets => {
+            const pos = document.querySelector('#position')
+            const canvas = document.createElement('canvas')
+            canvas.width = 100
+            canvas.height = 100
+            canvas.style.position = 'absolute'
+            canvas.style.transform = 'translate(0px, 0px)'
+            canvas.style.transition = '0.5s'
+            document.body.appendChild(canvas)
+
+            const ctx = canvas.getContext('2d')
+
+            const setCursorById = async _id => {
+                const asset = assets.find(({ id }) => id === _id)
+                const img = new Image()
+                img.src = asset.path
+                img.onload = () => {
+                    ctx.clearRect(0, 0, 100, 100)
+                    ctx.drawImage(img, 0, 0, 100, 100)
+                }
+            }
+
+            const setPosition = ({ x, y }) => {
+                pos.innerHTML = `${x}:${y}`
+                canvas.style.transform = `translate(${x-50}px, ${y-50}px)`
+            }
+
+            return {
+                setCursorById, 
+                setPosition
+            }
+        }
+
+        document.addEventListener('readystatechange', async e => {
+            if (e.target.readyState === 'complete') {
+                const assets = await fetch('/assets.json').then(data => data.json())
+
+                const { setCursorById, setPosition } = canvasCursorInit(assets)
+
+                const id = assets[parseInt(Math.random() * assets.length)].id
+                await setCursorById(id)
+
+                window.addEventListener('click', async () => {
+                    const id = assets[parseInt(Math.random() * assets.length)].id
+                    await setCursorById(id)
+                })
+                
+                window.addEventListener('mousemove', e => {
+                    const x = e.pageX
+                        , y = e.pageY
+
+                    console.log(x, y)
+
+                    if (window.timeout) {
+                        clearTimeout(window.timeout) 
+                        window.timeout = null
+                    }
+
+                    window.timeout = setTimeout(() => {
+                        setPosition({ x, y })
+                    }, 10)
+                })
+
+            }
+        })        
+    </script>
+</body>
+</html>
